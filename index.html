@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat to PDF Converter</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      background: #222;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #444;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>Chat → PDF Converter</h2>
+
+  <p>Upload a Chat JSON file</p>
+
+  <input type="file" id="fileInput" accept=".json">
+
+  <button onclick="convert()">Convert to PDF</button>
+</div>
+
+<script>
+function convert() {
+  const file = document.getElementById("fileInput").files[0];
+
+  if (!file) {
+    alert("Please upload a file");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    let data;
+
+    try {
+      data = JSON.parse(e.target.result);
+    } catch {
+      alert("Invalid JSON file");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    let y = 10;
+
+    function addLine(text) {
+      const lines = doc.splitTextToSize(text, 180);
+      doc.text(lines, 10, y);
+      y += lines.length * 7;
+
+      if (y > 280) {
+        doc.addPage();
+        y = 10;
+      }
+    }
+
+    if (Array.isArray(data)) {
+      data.forEach(msg => {
+        addLine((msg.role || "chat").toUpperCase() + ":");
+        addLine(msg.content || "");
+        addLine(" ");
+      });
+    } else if (data.messages) {
+      data.messages.forEach(msg => {
+        addLine((msg.role || "chat").toUpperCase() + ":");
+        addLine(msg.content || "");
+        addLine(" ");
+      });
+    } else {
+      addLine(JSON.stringify(data, null, 2));
+    }
+
+    doc.save("chat.pdf");
+  };
+
+  reader.readAsText(file);
+}
+</script>
+
+</body>
+  </html>
